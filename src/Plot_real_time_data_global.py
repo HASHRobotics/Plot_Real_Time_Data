@@ -20,20 +20,22 @@ def Range_callback(distance):
 	global range_values
 	global time_values
 	range_values.append(distance.range)
-	time_values.append(distance.header.stamp)
+	#rospy.loginfo(__dict__.distance.header.stamp)
+	time_values.append(distance.header.stamp.secs)
+	#time_values.append(distance.header.stamp)
+	#rospy.loginfo(time_values)
 
 def animate(frames):
 	global ax1
-	global fig
 	global range_values
 	global time_values
 	rospy.loginfo("In Animate \n")	
-	rospy.loginfo(frames)
+	#rospy.loginfo(frames)
 	if(len(range_values)>0):
 		#rospy.loginfo(type(range_values[0]))
-		#rospy.loginfo(type(time_values[0]))	
-		x_axis = np.arange(len(range_values))
-		ax1.plot(x_axis, range_values)
+		#rospy.loginfo(time_values[frames])	
+		#x_axis = np.arange(len(range_values))
+		ax1.plot(time_values, range_values)
 
 if __name__ == '__main__':
 	rospy.init_node('range_plot', anonymous=True)
