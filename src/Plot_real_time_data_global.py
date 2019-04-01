@@ -41,6 +41,7 @@ def animate(frames):
 		ax1.clear()
 		ax1.plot(time_values, range_values,color='blue')
 		ax1.annotate(string_to_display_on_graph,xy=(0.5, 0.95), xycoords="axes fraction")
+		#max value can also be plotted. max_value is being maintained
 
 if __name__ == '__main__':
 	rospy.init_node('range_plot', anonymous=True)
