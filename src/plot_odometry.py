@@ -24,7 +24,6 @@ def odom_callback(odom):
 	global X_values
 	Y_values.append(odom.pose.pose.position.y)
 	X_values.append(odom.pose.pose.position.x)
-	rospy.loginfo(X_values)
 
 def animate(frames):
 	global ax1
