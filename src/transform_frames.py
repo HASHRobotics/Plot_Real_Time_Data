@@ -9,6 +9,15 @@ from sensor_msgs.msg import Range
 from statistics import mean
 from nav_msgs.msg import Odometry
 import pdb
+from math import cos,sin,radians
+
+'''
+Notes to self:
+1) The time for range,bearing and odom is kept same as of now. It should be kept separate as range & bearing are not continous. 
+In the final version of the program we will simply subscribe to a topic which gives intermittent data and that will be plotted.
+As of now if you use a common time, the code should give an error.
+
+'''
 
 fig,(ax1,ax2,ax3) = plt.subplots(3,1)
 #ax1.set_title(r'Range VS Time')
@@ -21,6 +30,8 @@ time_values = []
 odom_Y_values = []
 odom_X_values = []
 max_value = -1
+H_rover12rtk = np.identity(3)
+H_rover22rtk = np.identity(3)
 
 def Range_callback(distance):
 	global range_count
@@ -37,6 +48,18 @@ def odom_callback(odom):
 	global odom_X_values
 	odom_Y_values.append((odom.pose.pose.position.y) + random.randint(1,10))
 	odom_X_values.append((odom.pose.pose.position.x) + random.randint(1,20))
+
+# def rtk_callback(rtk):
+# 	# global odom_Y_values
+# 	# global odom_X_values
+	# global H_rover12rtk
+	# global H_rover22rtk
+# 	rtk.counter += 1
+	# if(rtk.counter == 1):
+	# 	H_rover12rtk = getH(rtk1_x,rtk1_y,1)
+	# 	H_rover22rtk = getH(rtk2_x,rtk2_y,2)   #Simply pass the rtk1 and rtk2 values
+		
+# rtk.counter = 0		#Don't delete. This is for static int based method of RTK
 
 def animate(frames):
 	global ax1
@@ -79,6 +102,16 @@ def set_axis_labels():
 	# ax1.set_title(r'Range VS Time')
 	# ax2.set_title(r'Bearing VS Time')
 	# ax3.set_title(r'Rover Position VS Time')
+
+def getH(rtk_x,rtk_y,rover,odom_x = 0,odom_y = 0):
+	if(rover==1):
+		theta = radians(double(rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")))
+	if(rover==2):
+		theta = radians(double(rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")))
+	tx = rtk_x - odom_x*cos(theta) + odom_y*sin(theta) 
+	ty = rtk_y - odom_x*sin(theta) - odom_y*cos(theta)
+	H = np.array([[cos(theta),-sin(theta),tx],[sin(theta),cos(theta),ty],[0,0,1]])
+	return H 
 
 if __name__ == '__main__':
 	rospy.init_node('transform-frames', anonymous=True)
