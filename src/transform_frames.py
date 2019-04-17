@@ -38,16 +38,20 @@ def Range_callback(distance):
 	global range_values
 	global range_time_values 
 	global max_value
-	range_values.append(distance.range + random.randint(1,10))
+	global range_count #To be removed
+	range_values.append(distance.range + random.randint(1,30))
 	if(distance.range>max_value):
 		max_value = distance.range
-	range_time_values.append(distance.header.stamp.secs)
+	range_time_values.append(range_count)  #To be removed
+	#range_time_values.append(distance.header.stamp.secs)   #To be uncommented
 
 def Bearing_callback(bearing):
 	global bearing_values
 	global bearing_time_values
-	bearing_values.append(bearing.bearing)
-	bearing_time_values.append(bearing.header.stamp.secs)
+	global bearing_count
+	bearing_values.append(bearing.bearing + random.randint(1,15))
+	bearing_time_values.append(bearing_count) 	#To be removed
+	#bearing_time_values.append(bearing.header.stamp.secs) 	#To be uncommented
 
 
 def odom_callback(odom):
@@ -87,11 +91,10 @@ def animate(frames):
 		range_count+=1
 		average = mean(range_values) #This can be optimised by keeping a running average rather than computing evry single time.
 		string_to_display_on_graph = 'Mean: ' + str(round(average,2))  #Add appropriate units
-		rospy.loginfo(time_values)
-		#rospy.loginfo(range_count)
 		ax1.clear()
 		ax1.scatter(range_time_values, range_values,color='blue')
 		ax1.annotate(string_to_display_on_graph,xy=(0.5, 0.9), xycoords="axes fraction")
+		#ax2.set_yticks(np.arange(min(range_values),max(range_values)+1))
 		#max value can also be plotted. max_value is being maintained
 
 	if(len(bearing_values)>bearing_count):
@@ -99,6 +102,7 @@ def animate(frames):
 		rospy.loginfo("In bearing plot!")
 		ax2.clear()
 		ax2.scatter(bearing_time_values, bearing_values,color='green')
+		#ax2.set_yticks(np.arange(min(bearing_values),max(bearing_values)+1))
 
 	if(len(odom_X_values)>0):
 		#ax1.clear()
@@ -144,6 +148,7 @@ if __name__ == '__main__':
 	while not rospy.is_shutdown():
 		# plt.xlabel('time(s)')
 		# plt.ylabel('Range(m)')
+		#plt.tight_layout()
 		plt.show()
 		rate.sleep()
 
