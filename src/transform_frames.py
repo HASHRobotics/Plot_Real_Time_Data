@@ -9,6 +9,7 @@ from sensor_msgs.msg import Range
 from statistics import mean
 from nav_msgs.msg import Odometry
 from bearing_estimator.msg import bearing_msg
+from geometry_msgs.msg import PoseArray
 import pdb
 from math import cos,sin,radians
 
@@ -22,37 +23,67 @@ Notes to self:
 fig,(ax1,ax2,ax3) = plt.subplots(3,1)
 #ax1.set_title(r'Range VS Time')
 #ani = 1
+
 range_values = []
 range_count = 0 	#to see how any entries range values has and then plot only when new values come
+range_time_values = []
+
+ground_truth_range_values = []
+ground_truth_range_count = 0
+ground_truth_range_time_values = []
+
+range_error = []
+bearing_error = []
+
 bearing_values = []
 bearing_count = 0	#to see how any entries bearing values has and then plot only when new values come
-range_time_values = []
 bearing_time_values = []
+
+ground_truth_bearing_values = []
+ground_truth_bearing_count = 0
+ground_truth_bearing_time_values = []
+
 odom_Y_values = []
 odom_X_values = []
-max_value = -1
+#max_value = -1
+
+pose_array_x_1 = []
+pose_array_y_1 = []
+
+
 H_rover12rtk = np.identity(3)
 H_rover22rtk = np.identity(3)
 
-def Range_callback(distance):
+def range_callback(distance):
 	global range_values
 	global range_time_values 
-	global max_value
-	global range_count #To be removed
+	#global max_value
+	#global range_count #To be removed
 	range_values.append(distance.range + random.randint(1,30))
 	if(distance.range>max_value):
 		max_value = distance.range
-	range_time_values.append(range_count)  #To be removed
-	#range_time_values.append(distance.header.stamp.secs)   #To be uncommented
+	#range_time_values.append(range_count)  #To be removed
+	range_time_values.append(distance.header.stamp.secs)   #To be uncommented
 
-def Bearing_callback(bearing):
+def ground_truth_range_callback(distance):	
+	global ground_truth_range_values
+	global ground_truth_range_time_values 
+	ground_truth_range_values.append(distance.range + random.randint(1,30)) #Change to appropriate data-type
+	ground_truth_range_time_values.append(distance.header.stamp.secs)   #To be uncommented
+
+def bearing_callback(bearing):
 	global bearing_values
 	global bearing_time_values
 	global bearing_count
 	bearing_values.append(bearing.bearing + random.randint(1,15))
-	bearing_time_values.append(bearing_count) 	#To be removed
-	#bearing_time_values.append(bearing.header.stamp.secs) 	#To be uncommented
+	bearing_time_values.append(bearing.header.stamp.secs) 	#To be uncommented
 
+def ground_truth_bearing_callback(bearing):
+	global grount_truth_bearing_values
+	global ground_truth_bearing_time_values
+	global ground_truth_bearing_count
+	ground_truth_bearing_values.append(bearing.bearing + random.randint(1,15))
+	ground_truth_bearing_time_values.append(bearing.header.stamp.secs) 	#To be uncommented
 
 def odom_callback(odom):
 	global odom_Y_values
@@ -60,6 +91,12 @@ def odom_callback(odom):
 	odom_Y_values.append((odom.pose.pose.position.y) + random.randint(1,10))
 	odom_X_values.append(odom.pose.pose.position.x) 
 
+def pose_callback(Poses):
+	global pose_array_x_1
+	global pose_array_y_1
+	for elt in poses:
+		pose_array_x_1.append(Poses.poses.position.x)
+		pose_array_y_1.append(Poses.poses.position.y)
 
 # def rtk_callback(rtk):
 # 	# global odom_Y_values
@@ -77,37 +114,73 @@ def animate(frames):
 	global ax1
 	global ax2
 	global ax3
+
 	global range_values
 	global range_time_values
+	global range_count
+
+	global ground_truth_range_values
+	global ground_truth_range_time_values
+	global ground_truth_range_count
+
 	global bearing_time_values
+	global bearing_values
+	global bearing_count
+
+	global ground_truth_bearing_time_values
+	global ground_truth_bearing_values
+	global ground_truth_bearing_count
+
 	global odom_Y_values
 	global odom_X_values
-	global bearing_values
-	global max_value
-	global range_count
-	global bearing_count
-	rospy.loginfo("In Animate \n")	
+
+	global range_error
+	global bearing_error
+
+	global pose_array_x_1
+	global pose_array_y_1
+
+	#global max_value
+	rospy.loginfo("In Animate \n")
+
+	if(len(range_values)>range_count and len(ground_truth_range_values)>ground_truth_range_count):
+		range_error.append(abs(range_values[-1]-ground_truth_range_values[-1]))
+		average = mean(range_error) #This can be optimised by keeping a running average rather than computing evry single time.
+		string_to_display_on_graph = 'Mean Error in Range: ' + str(round(average,2)) + ' m'  #Add appropriate units
+		ax1.clear()
+		ax1.annotate(string_to_display_on_graph,xy=(0.5, 0.9), xycoords="axes fraction")
+
 	if(len(range_values)>range_count):
 		range_count+=1
-		average = mean(range_values) #This can be optimised by keeping a running average rather than computing evry single time.
-		string_to_display_on_graph = 'Mean: ' + str(round(average,2))  #Add appropriate units
-		ax1.clear()
 		ax1.scatter(range_time_values, range_values,color='blue')
-		ax1.annotate(string_to_display_on_graph,xy=(0.5, 0.9), xycoords="axes fraction")
 		#ax2.set_yticks(np.arange(min(range_values),max(range_values)+1))
 		#max value can also be plotted. max_value is being maintained
 
+	if(len(ground_truth_range_values)>ground_truth_range_count):
+		ground_truth_range_count+=1
+		ax1.scatter(ground_truth_range_time_values, ground_truth_range_values,color='red')
+
+	if(len(bearing_values)>bearing_count and len(ground_truth_bearing_values)>ground_truth_bearing_count):
+		bearing_error.append(abs(bearing_values[-1]-ground_truth_bearing_values[-1]))
+		average = mean(bearing_error) #This can be optimised by keeping a running average rather than computing evry single time.
+		string_to_display_on_graph = 'Mean Error in Bearing: ' + str(round(average,2)) + ' m'  #Add appropriate units
+		ax2.clear()
+		ax2.annotate(string_to_display_on_graph,xy=(0.5, 0.9), xycoords="axes fraction")
+
 	if(len(bearing_values)>bearing_count):
 		bearing_count+=1
-		rospy.loginfo("In bearing plot!")
-		ax2.clear()
-		ax2.scatter(bearing_time_values, bearing_values,color='green')
-		#ax2.set_yticks(np.arange(min(bearing_values),max(bearing_values)+1))
+		ax2.scatter(bearing_time_values, bearing_values,color='blue')
 
-	if(len(odom_X_values)>0):
-		#ax1.clear()
-		rospy.loginfo("In Animate \n")
-		ax3.plot(odom_X_values, odom_Y_values,color='red',label='Odometry')
+	if(len(ground_truth_bearing_values)>ground_truth_bearing_count):
+		ground_truth_bearing_count+=1
+		ax2.scatter(ground_truth_bearing_time_values, ground_truth_bearing_values,color='red')
+
+	if(len(odom_X_values)>0): #Change it for or condition on odom data/RTK data
+		ax3.clear()
+		ax3.plot(odom_X_values, odom_Y_values,color='green',label='Odometry')
+		ax3.plot(pose_array_x_1, pose_array_y_1,color='red',label='Updated Pose')
+
+
 
 def set_axis_labels():
 	global ax1
@@ -135,10 +208,11 @@ def getH(rtk_x,rtk_y,rover,odom_x = 0,odom_y = 0):
 
 if __name__ == '__main__':
 	rospy.init_node('transform-frames', anonymous=True)
-	rospy.Subscriber("/range", Range, Range_callback)
+	rospy.Subscriber("/range", Range, range_callback)
 	#rospy.Subscriber("/ak1/odometry/filtered", Odometry, odom_callback)
 	rospy.Subscriber("/odom1", Odometry, odom_callback)
 	rospy.Subscriber("/bearing", bearing_msg, Bearing_callback)
+	rospy.Subscriber("/pose1", PoseArray, pose_callback)
 	rover1_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")
 	rover2_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")
 	rate = rospy.Rate(10)
