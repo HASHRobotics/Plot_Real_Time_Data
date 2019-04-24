@@ -16,7 +16,7 @@ from math import cos,sin,radians
 
 '''
 Notes to self:
-1) The time for range,bearing and odom is kept same as of now. It should be kept separate as range & bearing are not continous. 
+1) The time for range,bearing and odom is kept same as of now. It should be kept separate as range & bearing are not continous.
 2) Note: A different time for range and bearing is maintained, since it's quite possible that bearing might not get captured or range might not get captured sometimes.
 
 '''
@@ -68,7 +68,7 @@ rtk_y_2 = []
 
 def range_callback(distance):
 	global range_values
-	global range_time_values 
+	global range_time_values
 	#global max_value
 	#global range_count #To be removed
 	range_values.append(distance.range)
@@ -77,9 +77,9 @@ def range_callback(distance):
 	#range_time_values.append(range_count)  #To be removed
 	range_time_values.append(distance.header.stamp.secs)   #To be uncommented
 
-def ground_truth_range_callback(distance):	
+def ground_truth_range_callback(distance):
 	global ground_truth_range_values
-	global ground_truth_range_time_values 
+	global ground_truth_range_time_values
 	ground_truth_range_values.append(distance.range) #Change to appropriate data-type
 	ground_truth_range_time_values.append(distance.header.stamp.secs)   #To be uncommented
 
@@ -87,7 +87,7 @@ def bearing_callback(bearing):
 	global bearing_values
 	global bearing_time_values
 	bearing_values.append(bearing.bearing)
-	bearing_time_values.append(bearing.header.stamp.secs) 	
+	bearing_time_values.append(bearing.header.stamp.secs)
 
 def ground_truth_bearing_callback(bearing):
 	global grount_truth_bearing_values
@@ -106,8 +106,8 @@ def odom1_callback(odom):
 	# 	odom_pos = np.array([[odom.pose.pose.position.x],[odom.pose.pose.position.y],[1]])
 	# 	odom_transformed = np.dot(H_rover12rtk,odom_pos)
 	# 	odom_Y1_values.append(odom_transformed[1])
-	# 	odom_X1_values.append(odom_transformed[0]) 
-	
+	# 	odom_X1_values.append(odom_transformed[0])
+
 def odom2_callback(odom):
 	global odom_Y2_values
 	global odom_X2_values
@@ -118,7 +118,7 @@ def odom2_callback(odom):
 	# 	odom_pos = np.array([[odom.pose.pose.position.x],[odom.pose.pose.position.y],[1]])
 	# 	odom_transformed = np.dot(H_rover22rtk,odom_pos)
 	# 	odom_Y2_values.append(odom_transformed[1])
-	# 	odom_X2_values.append(odom_transformed[0]) 
+	# 	odom_X2_values.append(odom_transformed[0])
 
 def pose1_callback(msg):
 	global pose_array_x_1
@@ -126,13 +126,13 @@ def pose1_callback(msg):
 	pose_array_x_1 = []
 	pose_array_y_1 = []
 	Poses = msg.poses
-	for elt in Poses: #Since poses is an array 
+	for elt in Poses: #Since poses is an array
 		pose_array_x_1.append(elt.position.x)
 		pose_array_y_1.append(elt.position.y)
 
 	# if(H_rover12rtk is not None):
 	# 	Poses = msg.poses
-	# 	for elt in Poses: #Since poses is an array 
+	# 	for elt in Poses: #Since poses is an array
 	# 		updated_pose = odom_pos = np.array([[odom.pose.pose.position.x],[odom.pose.pose.position.y],[1]])
 	# 		pose_array_x_1.append(elt.position.x)
 	# 		pose_array_y_1.append(elt.position.y)
@@ -143,7 +143,7 @@ def pose2_callback(msg):
 	pose_array_x_2 = []
 	pose_array_y_2 = []
 	Poses = msg.poses
-	for elt in Poses: #Since poses is an array 
+	for elt in Poses: #Since poses is an array
 		pose_array_x_2.append(elt.position.x)
 		pose_array_y_2.append(elt.position.y)
 
@@ -168,7 +168,7 @@ def rtk_callback(rtk):
 	if(rtk.counter == 1):
 		H_rover12rtk = getH(rtk1_x,rtk1_y,1)
 		H_rover22rtk = getH(rtk2_x,rtk2_y,2)   #Simply pass the rtk1 and rtk2 values
-		
+
 rtk.counter = 0		#Don't delete. This is for static int based method of RTK
 
 def animate(frames):
@@ -249,21 +249,21 @@ def animate(frames):
 		ax3.clear()
 		if(len(odom_X1_values)>0):
 			ax3.plot(odom_X1_values, odom_Y1_values,color='green',label='Odometry')
-		if(len(pose_array_x_1)>0):	
+		if(len(pose_array_x_1)>0):
 			ax3.plot(pose_array_x_1, pose_array_y_1,color='black',label='Updated Pose')
-		if(len(rtk_x_1)>0):	
+		if(len(rtk_x_1)>0):
 			ax3.plot(rtk_x_1, rtk_y_1,color='red',label='RTK')
 
 	if(len(odom_X2_values)>0 or len(rtk_x_2)>0): #Change it for or condition on odom data/RTK data
 		ax4.clear()
 		if(len(odom_X2_values)>0):
 			ax4.plot(odom_X2_values, odom_Y2_values,color='green',label='Odometry')
-		if(len(pose_array_x_2)>0):	
+		if(len(pose_array_x_2)>0):
 			ax4.plot(pose_array_x_2, pose_array_y_2,color='black',label='Updated Pose')
-		if(len(rtk_x_2)>0):	
+		if(len(rtk_x_2)>0):
 			ax4.plot(rtk_x_2, rtk_y_2,color='red',label='RTK')
 
-			
+
 
 def set_axis_labels():
 	global ax1
@@ -289,24 +289,36 @@ def getH(rtk_x,rtk_y,rover,odom_x = 0,odom_y = 0):
 		theta = radians(double(rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")))
 	if(rover==2):
 		theta = radians(double(rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")))
-	tx = rtk_x - odom_x*cos(theta) + odom_y*sin(theta) 
+	tx = rtk_x - odom_x*cos(theta) + odom_y*sin(theta)
 	ty = rtk_y - odom_x*sin(theta) - odom_y*cos(theta)
 	H = np.array([[cos(theta),-sin(theta),tx],[sin(theta),cos(theta),ty],[0,0,1]])
-	return H 
+	return H
 
 if __name__ == '__main__':
 	rospy.init_node('transform-frames', anonymous=True)
+
+	# Range
 	rospy.Subscriber("/sampled_range", Range, range_callback)
-	rospy.Subscriber("/sampled_range", Range, ground_truth_range_callback)						#CHANGE THIS
+	rospy.Subscriber("/true_range", Range, ground_truth_range_callback)
+
+	# RTK GPS
 	rospy.Subscriber("/ak1/piksi_multi/enu_pose_best_fix",PoseWithCovariance, rtk1_callback)
-	rospy.Subscriber("/ak2/piksi_multi/enu_pose_best_fix",PoseWithCovariance, rtk2_callback)
-	#rospy.Subscriber("/ak1/odometry/filtered", Odometry, odom_callback)
-	rospy.Subscriber("/odom1", Odometry, odom_callback)											#CHANGE THIS
+	# rospy.Subscriber("/ak2/piksi_multi/enu_pose_best_fix",PoseWithCovariance, rtk2_callback)
+
+	# ODOMETRY
+	rospy.Subscriber("/ak1/odometry/filtered", Odometry, odom_callback)
+	# rospy.Subscriber("/odom1", Odometry, odom_callback)
+
+	# BEARING
 	rospy.Subscriber("/bearing", bearing_msg, bearing_callback)
-	rospy.Subscriber("/bearing", bearing_msg, ground_truth_bearing_callback)					#CHANGE THIS
-	rospy.Subscriber("/pose1", PoseArray, pose_callback)										#CHANGE THIS
+	rospy.Subscriber("/rtk_bearing", bearing_msg, ground_truth_bearing_callback)
+
+	# Colocalized poses
+	rospy.Subscriber("/ak1/pose1", PoseArray, pose_callback)
+
 	rover1_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")
 	rover2_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")
+
 	rate = rospy.Rate(10)
 	rospy.loginfo("In Main \n")
 	set_axis_labels()
