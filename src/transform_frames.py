@@ -254,14 +254,14 @@ def animate(frames):
 		if(len(rtk_x_1)>0):
 			ax3.plot(rtk_x_1, rtk_y_1,color='red',label='RTK')
 
-	if(len(odom_X2_values)>0 or len(rtk_x_2)>0): #Change it for or condition on odom data/RTK data
-		ax4.clear()
-		if(len(odom_X2_values)>0):
-			ax4.plot(odom_X2_values, odom_Y2_values,color='green',label='Odometry')
-		if(len(pose_array_x_2)>0):
-			ax4.plot(pose_array_x_2, pose_array_y_2,color='black',label='Updated Pose')
-		if(len(rtk_x_2)>0):
-			ax4.plot(rtk_x_2, rtk_y_2,color='red',label='RTK')
+	# if(len(odom_X2_values)>0 or len(rtk_x_2)>0): #Change it for or condition on odom data/RTK data
+	# 	ax4.clear()
+	# 	if(len(odom_X2_values)>0):
+	# 		ax4.plot(odom_X2_values, odom_Y2_values,color='green',label='Odometry')
+	# 	if(len(pose_array_x_2)>0):
+	# 		ax4.plot(pose_array_x_2, pose_array_y_2,color='black',label='Updated Pose')
+	# 	if(len(rtk_x_2)>0):
+	# 		ax4.plot(rtk_x_2, rtk_y_2,color='red',label='RTK')
 
 
 
@@ -269,7 +269,7 @@ def set_axis_labels():
 	global ax1
 	global ax2
 	global ax3
-	global ax4
+	#global ax4
 	ax1.set_ylabel('Range')
 	ax1.set_xlabel('Time')
 	ax1.grid(linestyle='-', linewidth='0.3', color='red')
@@ -278,8 +278,8 @@ def set_axis_labels():
 	ax2.grid(linestyle='-', linewidth='0.3', color='red')
 	ax3.set_ylabel('Rover 1 Position in Y axis')
 	ax3.set_xlabel('Rover 1 Position in X axis')
-	ax4.set_ylabel('Rover 2 Position in Y axis')
-	ax4.set_xlabel('Rover 2 Position in X axis')
+	#ax4.set_ylabel('Rover 2 Position in Y axis')
+	#ax4.set_xlabel('Rover 2 Position in X axis')
 	# ax1.set_title(r'Range VS Time')
 	# ax2.set_title(r'Bearing VS Time')
 	# ax3.set_title(r'Rover Position VS Time')
@@ -306,7 +306,7 @@ if __name__ == '__main__':
 	# rospy.Subscriber("/ak2/piksi_multi/enu_pose_best_fix",PoseWithCovariance, rtk2_callback)
 
 	# ODOMETRY
-	rospy.Subscriber("/ak1/odometry/filtered", Odometry, odom_callback)
+	rospy.Subscriber("/ak1/odometry/filtered", Odometry, odom1_callback)
 	# rospy.Subscriber("/odom1", Odometry, odom_callback)
 
 	# BEARING
@@ -314,7 +314,7 @@ if __name__ == '__main__':
 	rospy.Subscriber("/rtk_bearing", bearing_msg, ground_truth_bearing_callback)
 
 	# Colocalized poses
-	rospy.Subscriber("/ak1/pose1", PoseArray, pose_callback)
+	rospy.Subscriber("/ak1/pose1", PoseArray, pose1_callback)
 
 	rover1_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")
 	rover2_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")
