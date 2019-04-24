@@ -21,7 +21,7 @@ Notes to self:
 
 '''
 
-fig,(ax1,ax2,ax3) = plt.subplots(4,1)
+fig,(ax1,ax2,ax3) = plt.subplots(3,1)
 #ax1.set_title(r'Range VS Time')
 #ani = 1
 
@@ -169,7 +169,7 @@ def rtk_callback(rtk):
 		H_rover12rtk = getH(rtk1_x,rtk1_y,1)
 		H_rover22rtk = getH(rtk2_x,rtk2_y,2)   #Simply pass the rtk1 and rtk2 values
 
-rtk.counter = 0		#Don't delete. This is for static int based method of RTK
+# rtk.counter = 0		#Don't delete. This is for static int based method of RTK
 
 def animate(frames):
 	global ax1
