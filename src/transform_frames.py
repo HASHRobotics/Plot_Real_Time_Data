@@ -10,9 +10,9 @@ from statistics import mean
 from nav_msgs.msg import Odometry
 from bearing_estimator.msg import bearing_msg
 from geometry_msgs.msg import PoseArray
-from geometry_msgs.msg import PoseWithCovariance
 from piksi_rtk_msgs.msg import BaselineNed
 from math import cos,sin,radians
+from rospy.exceptions import ROSException
 
 '''
 Notes to self:
@@ -61,7 +61,7 @@ rtk_x_2 = []
 rtk_y_2 = []
 
 # H_rover12rtk = None
-# H_rover22rtk = None
+H_rover22rtk = np.identity(3)
 # H_rover12rtk = np.identity(3)
 # H_rover22rtk = np.identity(3)
 
@@ -95,12 +95,12 @@ def ground_truth_bearing_callback(bearing):
 	ground_truth_bearing_values.append(bearing.bearing)
 	ground_truth_bearing_time_values.append(bearing.header.stamp.secs) 	#To be uncommented
 
-def odom1_callback(odom):
-	print("I am in odom1")
-	global odom_Y1_values
-	global odom_X1_values
-	odom_Y1_values.append(odom.pose.pose.position.x)
-	odom_X1_values.append(odom.pose.pose.position.y)
+# def odom1_callback(odom):
+# 	print("I am in odom1")
+# 	global odom_Y1_values
+# 	global odom_X1_values
+# 	odom_Y1_values.append(odom.pose.pose.position.x)
+# 	odom_X1_values.append(odom.pose.pose.position.y)
 
 	#global H_rover12rtk
 	# if(H_rover12rtk is not None):
@@ -112,24 +112,25 @@ def odom1_callback(odom):
 def odom2_callback(odom):
 	global odom_Y2_values
 	global odom_X2_values
-	odom_Y2_values.append(odom.pose.pose.position.x)
-	odom_X2_values.append(odom.pose.pose.position.y)
-	# global H_rover22rtk
-	# if(H_rover22rtk is not None):
-	# 	odom_pos = np.array([[odom.pose.pose.position.x],[odom.pose.pose.position.y],[1]])
-	# 	odom_transformed = np.dot(H_rover22rtk,odom_pos)
-	# 	odom_Y2_values.append(odom_transformed[1])
-	# 	odom_X2_values.append(odom_transformed[0])
+	# odom_Y2_values.append(odom.pose.pose.position.x)
+	# odom_X2_values.append(odom.pose.pose.position.y)
+	global H_rover22rtk
+	if(H_rover22rtk is not None):
+		odom_pos = np.array([[odom.pose.pose.position.x],[odom.pose.pose.position.y],[1]])
+		odom_transformed = np.dot(H_rover22rtk,odom_pos)
+		odom_X2_values.append(odom_transformed[0])
+		odom_Y2_values.append(odom_transformed[1])
 
-def pose1_callback(msg):
-	global pose_array_x_1
-	global pose_array_y_1
-	pose_array_x_1 = []
-	pose_array_y_1 = []
-	Poses = msg.poses
-	for elt in Poses: #Since poses is an array
-		pose_array_x_1.append(elt.position.x)
-		pose_array_y_1.append(elt.position.y)
+
+# def pose1_callback(msg):
+# 	global pose_array_x_1
+# 	global pose_array_y_1
+# 	pose_array_x_1 = []
+# 	pose_array_y_1 = []
+# 	Poses = msg.poses
+# 	for elt in Poses: #Since poses is an array
+# 		pose_array_x_1.append(elt.position.x)
+# 		pose_array_y_1.append(elt.position.y)
 
 	# if(H_rover12rtk is not None):
 	# 	Poses = msg.poses
@@ -144,31 +145,29 @@ def pose2_callback(msg):
 	pose_array_x_2 = []
 	pose_array_y_2 = []
 	Poses = msg.poses
+	global H_rover22rtk
 	for elt in Poses: #Since poses is an array
-		pose_array_x_2.append(elt.position.x)
-		pose_array_y_2.append(elt.position.y)
+		if(H_rover22rtk is not None):
+			pose = np.array([[elt.position.x],[elt.position.y],[1]])
+			pose_transformed = np.dot(H_rover22rtk,pose)
+			pose_array_x_2.append(pose_transformed[0])
+			pose_array_y_2.append(pose_transformed[1])
 
-def rtk1_callback(msg): #Copy this for rtk2_callback
-	global rtk_x_1
-	global rtk_y_1
-	rtk_x_1.append(msg.e)
-	rtk_y_1.append(msg.n)
+# def rtk1_callback(msg): #Copy this for rtk2_callback
+# 	global rtk_x_1
+# 	global rtk_y_1
+# 	rtk_x_1.append(msg.e)
+# 	rtk_y_1.append(msg.n)
 
 def rtk2_callback(msg): #Copy this for rtk2_callback
 	global rtk_x_2
 	global rtk_y_2
-	rtk_x_2.append(msg.e)
-	rtk_y_2.append(msg.n)
+	rtk_x_2.append(msg.e/1000.0)
+	rtk_y_2.append(msg.n/1000.0)
 
-def rtk_callback(rtk):
-	# global odom_Y_values
-	# global odom_X_values
+def rtk_callback(rtk_msg):
 	global H_rover12rtk
-	global H_rover22rtk
-	rtk.counter += 1
-	if(rtk.counter == 1):
-		H_rover12rtk = getH(rtk1_x,rtk1_y,1)
-		H_rover22rtk = getH(rtk2_x,rtk2_y,2)   #Simply pass the rtk1 and rtk2 values
+	H_rover22rtk = getH(rtk_msg.e,rtk_msg.n,2)
 
 # rtk.counter = 0		#Don't delete. This is for static int based method of RTK
 
@@ -193,21 +192,21 @@ def animate(frames):
 	global ground_truth_bearing_values
 	global ground_truth_bearing_count
 
-	global odom_Y1_values
-	global odom_X1_values
+	# global odom_Y1_values
+	# global odom_X1_values
 	global odom_Y2_values
 	global odom_X2_values
 
 	global range_error
 	global bearing_error
 
-	global pose_array_x_1
-	global pose_array_y_1
+	# global pose_array_x_1
+	# global pose_array_y_1
 	global pose_array_x_2
 	global pose_array_y_2
 
-	global rtk_x_1
-	global rtk_y_1
+	# global rtk_x_1
+	# global rtk_y_1
 	global rtk_x_2
 	global rtk_y_2
 
@@ -223,13 +222,15 @@ def animate(frames):
 
 	if(len(range_values)>range_count):
 		range_count+=1
-		ax1.scatter(range_time_values, range_values,color='blue')
+		plot_len = min(len(range_time_values),len(range_values))
+		ax1.scatter(range_time_values[0:plot_len], range_values[0:plot_len],color='blue')
 		#ax2.set_yticks(np.arange(min(range_values),max(range_values)+1))
 		#max value can also be plotted. max_value is being maintained
 
 	if(len(ground_truth_range_values)>ground_truth_range_count):
 		ground_truth_range_count+=1
-		ax1.scatter(ground_truth_range_time_values, ground_truth_range_values,color='red')
+		plot_len = min(len(ground_truth_range_time_values),len(ground_truth_range_values))
+		ax1.scatter(ground_truth_range_time_values[0:plot_len], ground_truth_range_values[0:plot_len],color='red')
 
 	if(len(bearing_values)>bearing_count and len(ground_truth_bearing_values)>ground_truth_bearing_count):
 		bearing_error.append(abs(bearing_values[-1]-ground_truth_bearing_values[-1]))
@@ -240,29 +241,35 @@ def animate(frames):
 
 	if(len(bearing_values)>bearing_count):
 		bearing_count+=1
-		ax2.scatter(bearing_time_values, bearing_values,color='blue')
+		plot_len = min(len(bearing_time_values),len(bearing_values))
+		ax2.scatter(bearing_time_values[0:plot_len], bearing_values[0:plot_len],color='blue')
 
 	if(len(ground_truth_bearing_values)>ground_truth_bearing_count):
 		ground_truth_bearing_count+=1
-		ax2.scatter(ground_truth_bearing_time_values, ground_truth_bearing_values,color='red')
+		plot_len = min(len(ground_truth_bearing_time_values),len(ground_truth_bearing_values))
+		ax2.scatter(ground_truth_bearing_time_values[0:plot_len], ground_truth_bearing_values[0:plot_len],color='red')
 
-	if(len(odom_X1_values)>0 or len(rtk_x_1)>0): #Change it for or condition on odom data/RTK data
+	# if(len(odom_X1_values)>0 or len(rtk_x_1)>0): #Change it for or condition on odom data/RTK data
+	# 	ax3.clear()
+	# 	if(len(odom_X1_values)>0):
+	# 		ax3.plot(odom_X1_values, odom_Y1_values,color='green',label='Odometry')
+	# 	if(len(pose_array_x_1)>0):
+	# 		ax3.plot(pose_array_x_1, pose_array_y_1,color='black',label='Updated Pose')
+	# 	if(len(rtk_x_1)>0):
+	# 		ax3.plot(rtk_x_1, rtk_y_1,color='red',label='RTK')
+
+	if(len(odom_X2_values)>0 or len(rtk_x_2)>0): #Change it for or condition on odom data/RTK data
 		ax3.clear()
-		if(len(odom_X1_values)>0):
-			ax3.plot(odom_X1_values, odom_Y1_values,color='green',label='Odometry')
-		if(len(pose_array_x_1)>0):
-			ax3.plot(pose_array_x_1, pose_array_y_1,color='black',label='Updated Pose')
-		if(len(rtk_x_1)>0):
-			ax3.plot(rtk_x_1, rtk_y_1,color='red',label='RTK')
-
-	# if(len(odom_X2_values)>0 or len(rtk_x_2)>0): #Change it for or condition on odom data/RTK data
-	# 	ax4.clear()
-	# 	if(len(odom_X2_values)>0):
-	# 		ax4.plot(odom_X2_values, odom_Y2_values,color='green',label='Odometry')
-	# 	if(len(pose_array_x_2)>0):
-	# 		ax4.plot(pose_array_x_2, pose_array_y_2,color='black',label='Updated Pose')
-	# 	if(len(rtk_x_2)>0):
-	# 		ax4.plot(rtk_x_2, rtk_y_2,color='red',label='RTK')
+		# rospy.logwarn("lengthx:{0} lengthy:{1}".format(len(odom_X2_values), len(odom_Y2_values)))
+		if(len(odom_X2_values)>0 and len(odom_X2_values) == len(odom_Y2_values)):
+			plot_len = min(len(odom_X2_values),len(odom_Y2_values))
+			ax3.plot(odom_X2_values[0:plot_len], odom_Y2_values[0:plot_len],color='green',label='Odometry')
+		if(len(pose_array_x_2)>0 and len(pose_array_x_2) == len(pose_array_y_2)):
+			plot_len = min(len(pose_array_x_2),len(pose_array_y_2))
+			ax3.plot(pose_array_x_2[0:plot_len], pose_array_y_2[0:plot_len],color='black',label='Updated Pose')
+		if(len(rtk_x_2)>0 and len(rtk_x_2) == len(rtk_y_2)):
+			plot_len = min(len(rtk_x_2),len(rtk_y_2))
+			ax3.plot(rtk_x_2[0:plot_len], rtk_y_2[0:plot_len],color='red',label='RTK')
 
 
 
@@ -277,8 +284,9 @@ def set_axis_labels():
 	ax2.set_ylabel('Bearing')
 	ax2.set_xlabel('Time')
 	ax2.grid(linestyle='-', linewidth='0.3', color='red')
-	ax3.set_ylabel('Rover 1 Position in Y axis')
-	ax3.set_xlabel('Rover 1 Position in X axis')
+	ax3.set_ylabel('Rover 2 Position in Y axis')
+	ax3.set_xlabel('Rover 2 Position in X axis')
+	ax3.legend()
 	#ax4.set_ylabel('Rover 2 Position in Y axis')
 	#ax4.set_xlabel('Rover 2 Position in X axis')
 	# ax1.set_title(r'Range VS Time')
@@ -287,20 +295,35 @@ def set_axis_labels():
 
 def getH(rtk_x,rtk_y,rover,odom_x = 0,odom_y = 0):
 	if(rover==1):
-		theta = radians(double(rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")))
+		theta = radians(float(rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")))
 	if(rover==2):
-		theta = radians(double(rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")))
+		theta = radians(float(rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")))
 	tx = rtk_x - odom_x*cos(theta) + odom_y*sin(theta)
 	ty = rtk_y - odom_x*sin(theta) - odom_y*cos(theta)
 	H = np.array([[cos(theta),-sin(theta),tx],[sin(theta),cos(theta),ty],[0,0,1]])
 	return H
 
 if __name__ == '__main__':
+
+
+
 	rospy.init_node('transform-frames', anonymous=True)
+
+	try:
+		msg = rospy.wait_for_message("/ak2/piksi/baseline_ned", BaselineNed, timeout=10)
+		rtk_callback(msg)
+		rospy.logwarn("RTK to BaseStation Transformation set")
+	except ROSException as e:
+		rospy.logwarn("RTK to BaseStation Transformation not set {0}".format(e))
+
 
 	# Range
 	rospy.Subscriber("/sampled_range", Range, range_callback)
 	rospy.Subscriber("/true_range", Range, ground_truth_range_callback)
+
+	# BEARING
+	rospy.Subscriber("/bearing", bearing_msg, bearing_callback)
+	rospy.Subscriber("/rtk_bearing", bearing_msg, ground_truth_bearing_callback)
 
 	# RTK GPS
 	rospy.Subscriber("/ak2/piksi/baseline_ned",BaselineNed, rtk2_callback)
@@ -308,19 +331,16 @@ if __name__ == '__main__':
 
 	# ODOMETRY
 	rospy.Subscriber("/ak2/odom", Odometry, odom2_callback)
-	# rospy.Subscriber("/odom1", Odometry, odom_callback)
+	# rospy.Subscriber("/odom1", Odometry, odom1_callback)
 
-	# BEARING
-	rospy.Subscriber("/bearing", bearing_msg, bearing_callback)
-	rospy.Subscriber("/rtk_bearing", bearing_msg, ground_truth_bearing_callback)
 
 	# Colocalized poses
-	rospy.Subscriber("/ak2/pose1", PoseArray, pose1_callback)
+	rospy.Subscriber("/ak2/pose2", PoseArray, pose2_callback)
 
 	# rover1_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")
 	# rover2_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")
 
-	rate = rospy.Rate(10)
+	rate = rospy.Rate(25)
 	rospy.loginfo("In Main \n")
 	set_axis_labels()
 	ani = animation.FuncAnimation(fig,animate,frames = None,interval = 50)
