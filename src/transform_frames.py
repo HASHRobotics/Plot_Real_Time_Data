@@ -96,6 +96,7 @@ def ground_truth_bearing_callback(bearing):
 	ground_truth_bearing_time_values.append(bearing.header.stamp.secs) 	#To be uncommented
 
 def odom1_callback(odom):
+	print("I am in odom1")
 	global odom_Y1_values
 	global odom_X1_values
 	odom_Y1_values.append(odom.pose.pose.position.x)
@@ -150,14 +151,14 @@ def pose2_callback(msg):
 def rtk1_callback(msg): #Copy this for rtk2_callback
 	global rtk_x_1
 	global rtk_y_1
-	rtk_x_1.append(msg.n)
-	rtk_y_1.append(msg.e)
+	rtk_x_1.append(msg.e)
+	rtk_y_1.append(msg.n)
 
 def rtk2_callback(msg): #Copy this for rtk2_callback
 	global rtk_x_2
 	global rtk_y_2
-	rtk_x_2.append(msg.n)
-	rtk_y_2.append(msg.e)
+	rtk_x_2.append(msg.e)
+	rtk_y_2.append(msg.n)
 
 def rtk_callback(rtk):
 	# global odom_Y_values
@@ -302,11 +303,11 @@ if __name__ == '__main__':
 	rospy.Subscriber("/true_range", Range, ground_truth_range_callback)
 
 	# RTK GPS
-	rospy.Subscriber("/ak2/piksi/baseline_ned",BaselineNed, rtk1_callback)
-	# rospy.Subscriber("/ak2/piksi_multi/enu_pose_best_fix",PoseWithCovariance, rtk2_callback)
+	rospy.Subscriber("/ak2/piksi/baseline_ned",BaselineNed, rtk2_callback)
+	# rospy.Subscriber("/ak1/piksi/baseline_ned",BaselineNed, rtk1_callback)
 
 	# ODOMETRY
-	rospy.Subscriber("/ak2/odometry/filtered", Odometry, odom1_callback)
+	rospy.Subscriber("/ak2/odom", Odometry, odom2_callback)
 	# rospy.Subscriber("/odom1", Odometry, odom_callback)
 
 	# BEARING
@@ -316,8 +317,8 @@ if __name__ == '__main__':
 	# Colocalized poses
 	rospy.Subscriber("/ak2/pose1", PoseArray, pose1_callback)
 
-	rover1_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")
-	rover2_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")
+	# rover1_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")
+	# rover2_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")
 
 	rate = rospy.Rate(10)
 	rospy.loginfo("In Main \n")
