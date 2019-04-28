@@ -11,7 +11,7 @@ from nav_msgs.msg import Odometry
 from bearing_estimator.msg import bearing_msg
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import PoseWithCovariance
-import pdb
+from piksi_rtk_msgs.msg import BaselineNed
 from math import cos,sin,radians
 
 '''
@@ -150,14 +150,14 @@ def pose2_callback(msg):
 def rtk1_callback(msg): #Copy this for rtk2_callback
 	global rtk_x_1
 	global rtk_y_1
-	rtk_x_1.append(msg.pose.position.x)
-	rtk_y_1.append(msg.pose.position.y)
+	rtk_x_1.append(msg.n)
+	rtk_y_1.append(msg.e)
 
 def rtk2_callback(msg): #Copy this for rtk2_callback
 	global rtk_x_2
 	global rtk_y_2
-	rtk_x_2.append(msg.pose.position.x)
-	rtk_y_2.append(msg.pose.position.y)
+	rtk_x_2.append(msg.n)
+	rtk_y_2.append(msg.e)
 
 def rtk_callback(rtk):
 	# global odom_Y_values
@@ -302,11 +302,11 @@ if __name__ == '__main__':
 	rospy.Subscriber("/true_range", Range, ground_truth_range_callback)
 
 	# RTK GPS
-	rospy.Subscriber("/ak1/piksi_multi/enu_pose_best_fix",PoseWithCovariance, rtk1_callback)
+	rospy.Subscriber("/ak2/piksi/baseline_ned",BaselineNed, rtk1_callback)
 	# rospy.Subscriber("/ak2/piksi_multi/enu_pose_best_fix",PoseWithCovariance, rtk2_callback)
 
 	# ODOMETRY
-	rospy.Subscriber("/ak1/odometry/filtered", Odometry, odom1_callback)
+	rospy.Subscriber("/ak2/odometry/filtered", Odometry, odom1_callback)
 	# rospy.Subscriber("/odom1", Odometry, odom_callback)
 
 	# BEARING
@@ -314,7 +314,7 @@ if __name__ == '__main__':
 	rospy.Subscriber("/rtk_bearing", bearing_msg, ground_truth_bearing_callback)
 
 	# Colocalized poses
-	rospy.Subscriber("/ak1/pose1", PoseArray, pose1_callback)
+	rospy.Subscriber("/ak2/pose1", PoseArray, pose1_callback)
 
 	rover1_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover1_start_angle")
 	rover2_start_angle = rospy.get_param("/Real_time_Plotting/transform_frames/rover2_start_angle")
