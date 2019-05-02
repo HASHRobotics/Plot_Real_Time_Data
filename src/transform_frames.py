@@ -166,8 +166,8 @@ def rtk2_callback(msg): #Copy this for rtk2_callback
 	rtk_y_2.append(msg.n/1000.0)
 
 def rtk_callback(rtk_msg):
-	global H_rover12rtk
-	H_rover22rtk = getH(rtk_msg.e,rtk_msg.n,2)
+	global H_rover22rtk
+	H_rover22rtk = getH(rtk_msg.e/1000.0,rtk_msg.n/1000.0,2)
 
 # rtk.counter = 0		#Don't delete. This is for static int based method of RTK
 
@@ -301,6 +301,7 @@ def getH(rtk_x,rtk_y,rover,odom_x = 0,odom_y = 0):
 	tx = rtk_x - odom_x*cos(theta) + odom_y*sin(theta)
 	ty = rtk_y - odom_x*sin(theta) - odom_y*cos(theta)
 	H = np.array([[cos(theta),-sin(theta),tx],[sin(theta),cos(theta),ty],[0,0,1]])
+	rospy.logwarn(H)
 	return H
 
 if __name__ == '__main__':
